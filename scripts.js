@@ -251,7 +251,7 @@ document.getElementById('endShiftButton').addEventListener('click', () => {
     setTimeout(() => {
       document.body.style.opacity = '0';
       setTimeout(() => {
-        window.location.href = 'welcome.html';
+        window.location.href = 'index.html';
       }, 1000);
     }, 2000);
   }, 1000);
