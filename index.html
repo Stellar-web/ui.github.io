@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เข้าสู่เวร</title>
+  <style>
+    /* Global Styles */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Splash Screen */
+    .splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #fff;
+      color: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 75px;
+      font-weight: bold;
+      z-index: 1000;
+      opacity: 1;
+      transition: opacity 1s ease;
+    }
+
+    .splash-screen.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Container for the main form */
+    .container {
+      text-align: center;
+      background: #ffffff;
+      padding: 30px 40px;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      max-width: 400px;
+      opacity: 0;
+      transform: translateY(50px);
+      transition: opacity 1s ease, transform 1s ease;
+    }
+
+    .container.fade-in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    select,
+    button {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 15px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      border: none;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+      transform: scale(1.05);
+    }
+
+    /* Pop-up Styles */
+    .popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      width: 320px;
+      text-align: center;
+      display: none;
+      opacity: 0;
+      z-index: 1000;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    .popup.active {
+      display: block;
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      display: none;
+    }
+
+    .overlay.active {
+      display: block;
+    }
+
+    .time-picker-modern {
+      display: flex;
+      justify-content: space-between;
+      margin: 20px 0;
+    }
+
+    .time-column-modern {
+      height: 120px;
+      overflow-y: auto;
+      width: 40%;
+      text-align: center;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      scroll-behavior: smooth;
+    }
+
+    .time-item-modern {
+      padding: 10px 0;
+      font-size: 18px;
+      cursor: pointer;
+      transition: transform 0.3s ease, color 0.3s ease;
+    }
+
+    .time-item-modern:hover {
+      background-color: #f0f0f0;
+    }
+
+    .time-item-modern.selected {
+      color: #007bff;
+      font-weight: bold;
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="splashh">
+    <img src=robot-logo.png alt="Robot Nurse Helper Logo">
+    
+  </div>
+
+  <!-- Splash Screen -->
+  <div class="splash-screen" id="splashScreen">
+    ยินดีต้อนรับ
+  </div>
+
+  <!-- Main Form -->
+  <div class="container" id="mainForm">
+    <h1>เข้าสู่เวร</h1>
+    <form id="shiftForm">
+      <label for="nurseName">ชื่อพยาบาล:</label>
+      <select id="nurseName" required>
+        <option value="" disabled selected>เลือกชื่อ</option>
+        <option value="สมหญิง">สมหญิง</option>
+        <option value="สายฝน">สายฝน</option>
+        <option value="สมนึก">สมนึก</option>
+      </select>
+      <button type="button" id="openPopup">เลือกเวลาเข้าเวร</button>
+    </form>
+    <p id="selectedTime" style="margin-top: 20px; font-size: 18px;"></p>
+  </div>
+
+  <!-- Overlay and Popup -->
+  <div class="overlay" id="overlay"></div>
+  <div class="popup" id="timePopup">
+    <h2>เลือกเวลา</h2>
+    <div class="time-picker-modern">
+      <div class="time-column-modern" id="hourColumn">
+        <!-- ชั่วโมง -->
+        <div class="time-item-modern" data-value="00">00</div>
+        <div class="time-item-modern" data-value="01">01</div>
+        <div class="time-item-modern" data-value="02">02</div>
+        <div class="time-item-modern" data-value="03">03</div>
+        <div class="time-item-modern" data-value="04">04</div>
+        <div class="time-item-modern" data-value="05">05</div>
+        <div class="time-item-modern" data-value="06">06</div>
+        <div class="time-item-modern" data-value="07">07</div>
+        <div class="time-item-modern" data-value="08">08</div>
+        <div class="time-item-modern" data-value="09">09</div>
+        <div class="time-item-modern" data-value="10">10</div>
+        <div class="time-item-modern" data-value="11">11</div>
+        <div class="time-item-modern" data-value="12">12</div>
+        <div class="time-item-modern" data-value="12">13</div>
+        <div class="time-item-modern" data-value="12">14</div>
+        <div class="time-item-modern" data-value="12">15</div>
+        <div class="time-item-modern" data-value="12">16</div>
+        <div class="time-item-modern" data-value="12">17</div>
+        <div class="time-item-modern" data-value="12">18</div>
+        <div class="time-item-modern" data-value="12">19</div>
+        <div class="time-item-modern" data-value="12">20</div>
+        <div class="time-item-modern" data-value="12">21</div>
+        <div class="time-item-modern" data-value="12">22</div>
+        <div class="time-item-modern" data-value="12">23</div>
+      </div>
+      <div class="time-column-modern" id="minuteColumn">
+        <!-- นาที -->
+        <div class="time-item-modern" data-value="00">00</div>
+        <div class="time-item-modern" data-value="15">15</div>
+        <div class="time-item-modern" data-value="30">30</div>
+        <div class="time-item-modern" data-value="45">45</div>
+      </div>
+    </div>
+    <button id="confirmTime">ยืนยัน</button>
+
+    <script>
+      const splashScreen = document.getElementById('splashScreen');
+      const mainForm = document.getElementById('mainForm');
+      const openPopupButton = document.getElementById('openPopup');
+      const timePopup = document.getElementById('timePopup');
+      const overlay = document.getElementById('overlay');
+      const selectedTimeDisplay = document.getElementById('selectedTime');
+      const confirmTimeButton = document.getElementById('confirmTime');
+
+      let selectedHour = '00';
+      let selectedMinute = '00';
+
+      // Fade out Splash Screen and Fade in Main Form
+      setTimeout(() => {
+        splashScreen.classList.add('fade-out');
+        setTimeout(() => {
+          splashScreen.style.display = 'none';
+          mainForm.classList.add('fade-in');
+        }, 500);
+      }, 750);
+
+      openPopupButton.addEventListener('click', () => {
+        const nurseName = document.getElementById('nurseName').value;
+        if (!nurseName) {
+          alert('กรุณาเลือกชื่อพยาบาลก่อน!');
+          return;
+        }
+
+        // เพิ่มคลาสให้ป็อปอัพและพื้นหลัง
+        timePopup.classList.add('active');
+        overlay.classList.add('active');
+
+        // เลื่อนโฟกัสไปยังป็อปอัพ
+        timePopup.focus();
+      });
+
+      // Select Time
+      document.querySelectorAll('.time-item-modern').forEach(item => {
+        item.addEventListener('click', function () {
+          const parentColumn = this.parentElement.id;
+          if (parentColumn === 'hourColumn') {
+            selectedHour = this.getAttribute('data-value');
+          } else if (parentColumn === 'minuteColumn') {
+            selectedMinute = this.getAttribute('data-value');
+          }
+
+          // Add selected class
+          this.parentElement.querySelectorAll('.time-item-modern').forEach(sibling => {
+            sibling.classList.remove('selected');
+          });
+          this.classList.add('selected');
+        });
+      });
+
+      // Confirm Time
+      confirmTimeButton.addEventListener('click', () => {
+        const nurseName = document.getElementById('nurseName').value;
+        selectedTimeDisplay.textContent = `คุณ ${nurseName} เข้าเวรเวลา: ${selectedHour}:${selectedMinute}`;
+        timePopup.classList.remove('active');
+        overlay.classList.remove('active');
+
+
+        timePopup.classList.remove('active');
+        overlay.classList.remove('active');
+
+        // หลังจากเลือกเสร็จ ย้ายหน้าไปที่ index.html
+        document.body.classList.add('fade-out'); // เพิ่มคลาส fade-out เพื่อทำเอฟเฟกต์หายไป
+        setTimeout(() => {
+          window.location.href = 'main.html'; // เปลี่ยนหน้าไปยัง index.html
+        }, 1000); // รอ 1 วินาทีเพื่อให้เอฟเฟกต์ fade-out ทำงานก่อนเปลี่ยนหน้า
+      });
+
+    </script>
+</body>
+
+</html>

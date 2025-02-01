@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="admin.css">
+  <script defer src="admin.js"></script>
+</head>
+<body>
+  <h1>Admin Panel</h1>
+  
+  <!-- ฟอร์มเพิ่มข้อมูลผู้ป่วย -->
+  <form id="addPatientForm">
+    <label>ชื่อผู้ป่วย:</label>
+    <input type="text" id="name" placeholder="ชื่อผู้ป่วย" required>
+    
+    <label>หมายเลขห้อง:</label>
+    <input type="text" id="room" placeholder="หมายเลขห้อง" required>
+    
+    <label>อาการ:</label>
+    <textarea id="symptoms" placeholder="อาการ" required></textarea>
+    
+    <button type="submit">เพิ่มข้อมูลผู้ป่วย</button>
+  </form>
+  
+  <!-- ตารางแสดงข้อมูลผู้ป่วย -->
+  <h2>รายชื่อผู้ป่วย</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ชื่อ</th>
+        <th>หมายเลขห้อง</th>
+        <th>อาการ</th>
+        <th>การจัดการ</th>
+      </tr>
+    </thead>
+    <tbody id="patientTable">
+      <!-- ข้อมูลผู้ป่วยจะแสดงที่นี่ -->
+    </tbody>
+  </table>
+</body>
+</html>

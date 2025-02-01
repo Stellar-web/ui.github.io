@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robot Nurse Helper</title>
+  <!-- ลิงก์ไฟล์ CSS -->
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Giga:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* ปรับตำแหน่งของ center-notification */
+    #notification-popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+    }
+
+    .popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      z-index: 1000;
+      display: none;
+      text-align: center;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .popup.active {
+      display: block;
+    }
+
+    .center-notification {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+      z-index: 1000;
+      display: none;
+    }
+
+    body {
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+    }
+
+    body.fade-in {
+      opacity: 1;
+    }
+
+    .center-notification.active {
+      display: block;
+    }
+
+    .center-notification-content {
+      text-align: center;
+    }
+
+    /* เพิ่มพื้นหลังเทาเมื่อแจ้งเตือนแสดง */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      display: none;
+    }
+
+    .overlay.active {
+      display: block;
+    }
+
+    /* ป้องกันการซ้อนทับของ notification และ modal */
+    .modal.active,
+    .center-notification {
+      z-index: 1000;
+    }
+
+    .button.stop {
+      background-color: red;
+    }
+
+    .button.stop:hover {
+      background-color: darkred;
+    }
+
+    .button.follow {
+      background-color: green;
+    }
+
+    .button.follow:hover {
+      background-color: darkgreen;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -60%);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Splash Screen -->
+  <div id="splash">
+    <img src=robot-logo.png alt="Robot Nurse Helper Logo">
+    <h1>WELCOME Nurse</h1>
+  </div>
+
+  <div class="popup" id="notificationPopup">
+    <p>ถึงเวลาให้ยาแล้ว</p>
+    <p>คนไข้: นายวิศรุฒน์ เอมสมบูรณ์</p>
+    <p>ยา: ยาปฏิชีวนะ</p>
+    <p>ตึก: ชั้น 4, เตียง: F401</p>
+    <button class="yes" onclick="handleYes()">ให้ยาเรียบร้อยแล้ว</button>
+    <button class="no" onclick="handleNo()">ไม่สามารถให้ได้</button>
+  </div>
+
+  <div class="popup" id="recordPopup">
+    <p>เกิดปัญหาอะไรขึ้น?</p>
+    <button onclick="startRecording()">เริ่มอัดเสียง</button>
+    <button onclick="stopRecording()">หยุดอัดเสียง</button>
+    <p id="recordStatus"></p>
+  </div>
+
+    <button id="notification-ok" style="display: none;">OK</button>
+    <button id="notification-yes" style="display: none;">ให้ยาเรียบร้อย</button>
+    <button id="notification-no" style="display: none;">ไม่สามารถให้ยาได้</button>
+  </div>
+
+  <div id="problem-popup" style="display: none;">
+    <h2>คุณมีปัญหาอะไรรึป่าว?</h2>
+    <p id="problem-status"></p>
+    <button id="start-recording">เริ่มอัดเสียง</button>
+    <button id="stop-recording" disabled>หยุดอัดเสียง</button>
+  </div>
+
+  <div id="notification-10-min" class="notification">
+    <p>อีก 10 นาทีถึงเวลาให้ยา</p>
+  </div>
+  
+  <div id="notification-now" class="notification">
+    <p>ถึงเวลาให้ยาแล้ว</p>
+    <button id="done-button">เรียบร้อย</button>
+    <button id="not-given-button">ให้ยาไม่ได้</button>
+  </div>
+  
+
+  <!-- Pop-up for Problems -->
+  <div id="problem-popup" style="display: none;">
+    <h2>มีปัญหาอะไรรึป่าว</h2>
+    <p>กรุณาอัดเสียงเพื่อแจ้งปัญหา</p>
+    <button id="start-recording">เริ่มอัดเสียง</button>
+    <button id="stop-recording" disabled>หยุดอัดเสียง</button>
+    <p id="status-message"></p>
+    <button id="problem-close">ปิด</button>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container" id="main-content">
+    <!-- Battery Status -->
+    <div id="battery-status">
+      <img src="battery-icon.png" alt="Battery Icon" class="battery-icon">
+      <span id="battery-percentage">54%</span>
+    </div>
+
+<div id="problem-message" style="display: none; padding: 10px; background: #fff3cd;">
+  มีปัญหาอะไรรึป่าว
+</div>
+
+
+    <div id="summary-modal" class="modal">
+      <div class="modal-content">
+        <h2>สรุปเวรก่อนหน้า</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>ลำดับ</th>
+              <th>ชื่อคนไข้</th>
+              <th>ยา</th>
+              <th>สถานะ</th>
+              <th>เวลา</th>
+            </tr>
+          </thead>
+          <tbody id="summaryTable">
+            <!-- ข้อมูลจะถูกเติมที่นี่ -->
+          </tbody>
+        </table>
+        <button class="button" onclick="closeSummary()">ปิด</button>
+      </div>
+    </div>
+
+
+
+    <!-- Overlay -->
+    <div class="overlay" id="notification-overlay"></div>
+    <div id="center-notification" class="center-notification hidden">
+      <div class="center-notification-content">
+        <p id="center-notification-details"></p>
+        <button class="button" onclick="closeNotification()">ปิด</button>
+      </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="center-notification" class="center-notification hidden">
+      <div class="center-notification-content">
+        <p id="center-notification-details"></p>
+        <button class="button" id="view-patient-button">ดูข้อมูลคนไข้</button>
+        <button class="button" onclick="closeNotification()">ปิด</button>
+      </div>
+    </div>
+    <audio id="notification-sound" src="notification-sound.mp3"></audio>
+
+    <!-- Main Title -->
+    <h1>Robot Nurse Helper</h1>
+
+    <!-- Patient Table -->
+    <table>
+      <thead>
+        <tr>
+          <th>ชื่อผู้ป่วย</th>
+          <th>อายุ</th>
+          <th>สถานะ</th>
+          <th>ดูประวัติ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>นายจรัสเดช ชัชวาลย์</td>
+          <td>65</td>
+          <td>รอรับยา</td>
+          <td><button class="button view-history" onclick="viewHistory('นายจรัสเดช ชัชวาลย์')">ดูประวัติ</button></td>
+        </tr>
+        <tr>
+          <td>นายทรงโชค กล้าแข็ง</td>
+          <td>70</td>
+          <td>รอรับยา</td>
+          <td><button class="button view-history" onclick="viewHistory('นายทรงโชค กล้าแข็ง')">ดูประวัติ</button></td>
+        </tr>
+        <tr>
+          <td>นางสาววันดี โค้ไพบูลย์</td>
+          <td>50</td>
+          <td>รอรับยา</td>
+          <td><button class="button view-history" onclick="viewHistory('นางสาววันดี โค้ไพบูลย์')">ดูประวัติ</button>
+          </td>
+        </tr>
+        <tr>
+          <td>นายวิศรุฒน์ เอมสมบูรณ์</td>
+          <td>45</td>
+          <td>รอรับยา</td>
+          <td><button class="button view-history" onclick="viewHistory('นายวิศรุฒน์ เอมสมบูรณ์')">ดูประวัติ</button>
+          </td>
+        </tr>
+        <tr>
+          <td>นางสาวมุทิตา กฤชอาคม</td>
+          <td>30</td>
+          <td>รอรับยา</td>
+          <td><button class="button view-history" onclick="viewHistory('นางสาวมุทิตา กฤชอาคม')">ดูประวัติ</button></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Button to show schedule -->
+    <button class="button" onclick="showSchedule()">ดูลำดับการให้ยา</button>
+    <button id="toggle-follow-button" class="button follow">เดินตาม</button>
+    <button id="summary-button" class="button" onclick="showSummary()">สรุปเวรก่อนหน้า</button>
+    <button id="endShiftButton" class="end-shift-button">จบการเข้าเวร</button>
+  </div>
+
+  <!-- History Modal -->
+  <div class="modal" id="history-modal">
+    <div class="modal-content">
+      <h2>ประวัติผู้ป่วย</h2>
+      <div id="history-details">
+        <!-- รายละเอียดประวัติจะเติมข้อมูลจาก JavaScript -->
+      </div>
+      <button class="button" onclick="closeHistory()">ปิด</button>
+    </div>
+  </div>
+
+  <div id="summary-modal" class="modal">
+    <div class="modal-content">
+      <h2>สรุปเวรก่อนหน้า</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ลำดับ</th>
+            <th>ชื่อคนไข้</th>
+            <th>ยา</th>
+            <th>สถานะ</th>
+            <th>เวลา</th>
+          </tr>
+        </thead>
+        <tbody id="summaryTable">
+          <!-- ข้อมูลจะถูกเติมที่นี่ -->
+        </tbody>
+      </table>
+      <button class="button" onclick="closeSummary()">ปิด</button>
+    </div>
+  </div>
+
+  <!-- Schedule Modal -->
+  <div class="modal" id="schedule-modal">
+    <div class="modal-content">
+      <h2>ลำดับการให้ยา</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ลำดับ</th>
+            <th>ชื่อผู้ป่วย</th>
+            <th>ยา</th>
+            <th>เวลาให้ยา</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>นายจรัสเดช ชัชวาลย์</td>
+            <td>ยาลดความดัน</td>
+            <td>09:00 น.</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>นายทรงโชค กล้าแข็ง</td>
+            <td>ยาลดน้ำตาล</td>
+            <td>09:15 น.</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>นางสาววันดี โค้ไพบูลย์</td>
+            <td>ยาคลายเครียด</td>
+            <td>09:30 น.</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>นายวิศรุฒน์ เอมสมบูรณ์</td>
+            <td>ยาปฏิชีวนะ</td>
+            <td>09:45 น.</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>นางสาวมุทิตา กฤชอาคม</td>
+            <td>ยาบรรเทาปวด</td>
+            <td>10:00 น.</td>
+          </tr>
+        </tbody>
+      </table>
+      <button class="button" onclick="closeSchedule()">ปิด</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="notification-overlay"></div>
+
+  <!-- JavaScript -->
+  <script>
+    const notificationPopup = document.getElementById('notificationPopup');
+    const recordPopup = document.getElementById('recordPopup');
+    const recordStatus = document.getElementById('recordStatus');
+    const API_URL = "http://localhost:5000"; // URL ของเซิร์ฟเวอร์ Flask
+
+    async function checkShiftStatus() {
+      try {
+        const response = await fetch(`${API_URL}/shift-status`);
+        const shiftStatus = await response.json();
+
+        console.log("สถานะเวร:", shiftStatus);
+
+        if (shiftStatus.status === "off-duty") {
+          // หากหมดเวรแล้ว ให้ไปที่หน้า Welcome
+          window.location.href = "index.html";
+        } else {
+          // หากยังอยู่ในเวร ให้ไปที่หน้าหลัก
+          window.location.href = "index.html";
+        }
+      } catch (error) {
+        console.error("เกิดข้อผิดพลาดในการตรวจสอบสถานะเวร:", error);
+      }
+    }
+
+  // เมื่อกดปุ่ม OK
+  document.getElementById('notification-ok').addEventListener('click', () => {
+    updateNotification('ถึงเวลาให้ยาแล้ว<br>คนไข้: นายวิศรุฒน์ เอมสมบูรณ์<br>ยา: ยาปฏิชีวนะ<br>หมายเลขเตียง: F401<br>ตึก: ชั้น 4');
+  });
+
+    // เรียกฟังก์ชันหลังจากโหลดหน้าโลโก้เสร็จ
+    setTimeout(checkShiftStatus, 2000); // รอ 2 วินาทีหลังจาก Splash Screen
+    // ฟังก์ชันปิด Notification
+    function closeNotification() {
+      const notification = document.getElementById('center-notification');
+      const overlay = document.getElementById('notification-overlay');
+
+      if (notification && overlay) {
+        notification.classList.remove('active');
+        overlay.classList.remove('active');
+      }
+    }
+
+
+    // ฟังก์ชันเปิด Notification
+    function showNotification(details) {
+      const notification = document.getElementById('center-notification');
+      const notificationDetails = document.getElementById('center-notification-details');
+      const overlay = document.getElementById('notification-overlay');
+
+      if (notification && notificationDetails && overlay) {
+        // อัปเดตข้อความแจ้งเตือน
+        notificationDetails.innerHTML = details;
+
+        // แสดงแจ้งเตือนและพื้นหลังมืด
+        notification.classList.add('active');
+        overlay.classList.add('active');
+      } else {
+        console.error('ไม่พบองค์ประกอบสำหรับการแจ้งเตือน');
+      }
+    }
+
+    // ฟังก์ชันเปิด Modal ตารางลำดับการให้ยา
+    function showSchedule() {
+      const scheduleModal = document.getElementById('schedule-modal');
+      if (scheduleModal) {
+        scheduleModal.classList.add('active');
+      }
+    }
+
+    // ฟังก์ชันปิด Modal ตารางลำดับการให้ยา
+    function closeSchedule() {
+      const scheduleModal = document.getElementById('schedule-modal');
+      if (scheduleModal) {
+        scheduleModal.classList.remove('active');
+      }
+    }
+
+    // ฟังก์ชันเปิด Modal ดูประวัติ
+    function viewHistory(patientName) {
+      const historyModal = document.getElementById('history-modal');
+      const historyDetails = document.getElementById('history-details');
+
+      const patientHistories = {
+        'นายสมชาย ใจดี': 'ประวัติ: เป็นโรคความดันโลหิตสูง ต้องรับประทานยาทุกวัน',
+        'นางสาวสวย สบายดี': 'ประวัติ: เคยผ่าตัดรักษาน้ำตาลในเลือดต่ำ'
+      };
+
+      if (historyModal && historyDetails) {
+        historyDetails.innerHTML = `
+          <p><strong>ชื่อผู้ป่วย:</strong> ${patientName}</p>
+          <p>${patientHistories[patientName] || 'ไม่พบข้อมูลประวัติ'}</p>
+        `;
+        historyModal.classList.add('active');
+      }
+    }
+
+    // ฟังก์ชันปิด Modal ดูประวัติ
+    function closeHistory() {
+      const historyModal = document.getElementById('history-modal');
+      if (historyModal) {
+        historyModal.classList.remove('active');
+      }
+    }
+
+    // ฟังก์ชันสำหรับสลับสถานะปุ่มหยุดการเดินตามและเดินตาม
+    function toggleFollow() {
+      const button = document.getElementById('toggle-follow-button');
+      if (button.classList.contains('stop')) {
+        button.classList.remove('stop');
+        button.classList.add('follow');
+        button.textContent = 'เดินตาม';
+      } else {
+        button.classList.remove('follow');
+        button.classList.add('stop');
+        button.textContent = 'หยุดการเดินตาม';
+      }
+    }
+   
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.classList.add('fade-in');
+    });
+    function showNotification(message) {
+      const notificationPopup = document.getElementById('notification-popup');
+      const notificationContent = document.getElementById('notification-content');
+      const overlay = document.getElementById('notification-overlay');
+
+      notificationContent.innerHTML = message;
+      notificationPopup.classList.add('active');
+      overlay.classList.add('active');
+    }
+
+    // ฟังก์ชันอัปเดตข้อความแจ้งเตือน
+    function updateNotification(newMessage) {
+      const notificationContent = document.getElementById('notification-content');
+      notificationContent.innerHTML = newMessage;
+    };
+    setTimeout(() => {
+      notificationPopup.classList.add('active');
+    }, 5000);
+
+    // Handle "ให้ยาเรียบร้อยแล้ว"
+    function handleYes() {
+      alert("การให้ยาเสร็จสมบูรณ์");
+      notificationPopup.classList.remove('active');
+    }
+
+    // Handle "ไม่สามารถให้ได้"
+    function handleNo() {
+      notificationPopup.classList.remove('active');
+      recordPopup.classList.add('active');
+    }
+
+    // Simulated recording logic
+    let isRecording = false;
+    function startRecording() {
+      isRecording = true;
+      recordStatus.textContent = "กำลังอัดเสียง...";
+    }
+
+    function stopRecording() {
+      if (isRecording) {
+        isRecording = false;
+        recordStatus.textContent = "ส่งข้อมูลให้แพทย์เรียบร้อย";
+        setTimeout(() => {
+          recordPopup.classList.remove('active');
+        }, 2000);
+      }
+    }
+  </script>
+  <script src="scripts.js" defer></script>
+</body>
+
+</html>
